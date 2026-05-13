@@ -105,7 +105,7 @@ function createWindow(): void {
     icon: path.join(__dirname, "../resources/icon.ico"),
   });
 
-   mainWindow.webContents.openDevTools();
+   //mainWindow.webContents.openDevTools();
 
   mainWindow.loadFile(path.join(__dirname, "../index.html"));
 

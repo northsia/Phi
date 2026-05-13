@@ -12,6 +12,6 @@
     "sourceMap": true
   },
   "include": ["src/**/*", "settings.json","src/**/*.ts",
-    "scripts/**/*.ts", "scripts/copy-paste.تس"],
+    "scripts/**/*.ts", "scripts/copy-paste.ts"],
   "exclude": ["node_modules", "dist"]
 }
