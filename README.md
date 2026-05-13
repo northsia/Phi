@@ -1,8 +1,14 @@
 # Phi
 
-<img width="512" height="512" alt="logo" src="https://github.com/user-attachments/assets/4ad265e2-04ba-4973-b951-f661d15647ec" />
+<div align="center">
+  <img width="256" height="256" alt="logo" src="https://github.com/user-attachments/assets/4ad265e2-04ba-4973-b951-f661d15647ec" />
+</div>
 
-A minimal, fast terminal emulator built with Electron — designed to stay out of your way.
+<div align="center">
+  <strong>A minimal, fast terminal emulator built with Electron — designed to stay out of your way.</strong>
+</div>
+
+---
 
 ## Features
 
