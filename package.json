@@ -1,6 +1,6 @@
 {
   "name": "phi",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Phi Terminal",
   "main": "dist/main.js",
   "build": {
@@ -11,6 +11,7 @@
       "dist/**/*",
       "index.html",
       "resources/**/*",
+      "scripts/**/*",
       "node_modules/node-pty/**/*",
       "node_modules/axios/**/*",
       "node_modules/follow-redirects/**/*",
