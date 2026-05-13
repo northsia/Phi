@@ -1,0 +1,1131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <title>Phi Term</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link
+    href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&display=swap"
+    rel="stylesheet"
+  />
+
+  <!-- xterm.js -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/xterm@5.3.0/css/xterm.css" />
+  <script src="https://cdn.jsdelivr.net/npm/xterm@5.3.0/lib/xterm.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/xterm-addon-fit@0.8.0/lib/xterm-addon-fit.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/xterm-addon-web-links@0.9.0/lib/xterm-addon-web-links.js"></script>
+
+  <style>
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+
+    :root {
+      --bg:       #000000;
+      --surface:  #111111;
+      --titlebar: #020202;
+      --border:   #1e1e1e;
+
+      --text:     #ffffff;
+      --text-dim: #555555;
+      --text-hi:  #ffffff;
+
+      --green:  #89d185;
+      --blue:   #569cd6;
+      --cyan:   #4ec9b0;
+      --yellow: #dcdcaa;
+      --red:    #f48771;
+      --purple: #c586c0;
+
+      --font: "SfPro", sans-serif;
+      --font-bold: "SfProBold", sans-serif;
+      --radius: 12px;
+    }
+
+    @font-face { 
+        font-family: "Fira"; 
+        src: url("./resources/FIRACODE-MEDIUM.TTF");
+        format: ("truetype"); 
+        font-weight: 500; 
+        font-style: 
+        normal; 
+    }
+
+    html, body {
+      height: 100vh;
+      overflow: hidden;
+      background: transparent;
+      font-family: "Fira", monospace;
+      font-size: 13px;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ── INTRO SPLASH ─────────────────────────────────────────────────────── */
+
+    #intro {
+      position: fixed;
+      inset: 0;
+      z-index: 9999;
+      background: #000;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 0;
+      animation: introFadeIn .01s ease forwards;
+      pointer-events: all;
+    }
+
+    #intro.fade-out {
+      animation: introFadeOut 1.2s ease forwards;
+    }
+
+    @keyframes introFadeIn {
+      from { opacity: 0; }
+      to   { opacity: 1; }
+    }
+
+    @keyframes introFadeOut {
+      from { opacity: 1; }
+      to   { opacity: 0; }
+    }
+
+    #intro-logo {
+      width: 96px;
+      height: 96px;
+      object-fit: contain;
+      opacity: 0;
+      transform: scale(.88);
+      animation: logoPop .65s cubic-bezier(.22,1,.36,1) .25s forwards;
+    }
+
+    @keyframes logoPop {
+      from { opacity: 0; transform: scale(.88); }
+      to   { opacity: 1; transform: scale(1);   }
+    }
+
+
+    @font-face {
+        font-family: "SfPro";
+        src: url(./resources/SFPRODISPLAYMEDIUM.OTF);
+        font-weight: 500; 
+        font-style: 
+        normal; 
+    }
+    
+
+    @font-face {
+      font-family: "SfProBold";
+      src: url("./resources/SFPRODISPLAYBOLD.OTF") format("opentype");
+      font-weight: 700;
+      font-style: normal;
+    }
+
+    #intro-title {
+      margin-top: 28px;
+      font-family: var(--font);
+      font-size: 42px;
+      font-weight: 700;
+      letter-spacing: .12em;
+      color: #fff;
+      opacity: 0;
+      animation: textRise .6s cubic-bezier(.22,1,.36,1) .45s forwards;
+    }
+
+    #intro-sub {
+      position: absolute;
+      bottom: 36px;
+      font-family: var(--font);
+      font-size: 11px;
+      letter-spacing: .18em;
+      color: #333;
+      text-transform: uppercase;
+      opacity: 0;
+      animation: textRise .5s ease .75s forwards;
+    }
+
+    @keyframes textRise {
+      from { opacity: 0; transform: translateY(6px); }
+      to   { opacity: 1; transform: translateY(0);   }
+    }
+
+    /* ── APP SHELL ──────────────────────────────────────────────────────────── */
+
+    #app {
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      border-radius: var(--radius);
+      overflow: hidden;
+      background: var(--bg);
+      box-shadow:
+        0 22px 70px rgba(0,0,0,.72),
+        0 0 0 .5px rgba(255,255,255,.07);
+    }
+
+    /* ── TITLE BAR ──────────────────────────────────────────────────────────── */
+
+    #titlebar {
+      position: relative;
+      display: flex;
+      align-items: center;
+      height: 38px;
+      padding: 0 14px;
+      background: var(--titlebar);
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+      user-select: none;
+      -webkit-app-region: drag;
+    }
+
+    /* Traffic lights — left */
+    .tl {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      -webkit-app-region: no-drag;
+      z-index: 1;
+    }
+
+    .tl-btn {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      border: none;
+      padding: 0;
+      cursor: pointer;
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: filter .12s;
+    }
+
+    .tl-btn:focus { outline: none; }
+    .tl-btn:hover { filter: brightness(1.15); }
+
+    .tl-c { background: #ff5f57; box-shadow: 0 0 0 .5px rgba(0,0,0,.3) inset; }
+    .tl-m { background: #febc2e; box-shadow: 0 0 0 .5px rgba(0,0,0,.3) inset; }
+    .tl-z { background: #28c840; box-shadow: 0 0 0 .5px rgba(0,0,0,.3) inset; }
+
+    .tl-btn::after {
+      content: '';
+      position: absolute;
+      opacity: 0;
+      transition: opacity .1s;
+      font-size: 8px;
+      font-weight: 700;
+      color: rgba(0,0,0,.6);
+      line-height: 1;
+    }
+    .tl:hover .tl-btn::after { opacity: 1; }
+    .tl-c::after { content: '×'; font-size: 10px; }
+    .tl-m::after { content: '–'; }
+    .tl-z::after { content: '⤢'; font-size: 7px; }
+
+    /* Center label + settings button wrapper */
+    #title-center {
+      position: absolute;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      pointer-events: none;
+      white-space: nowrap;
+    }
+
+    #title-center-text {
+      font-family: var(--font-bold);
+      font-size: 11.5px;
+      color: rgba(255,255,255,.35);
+    }
+
+    /* Settings icon button */
+    #btn-settings {
+      pointer-events: all;
+      -webkit-app-region: no-drag;
+      background: none;
+      border: none;
+      padding: 1px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0.45;
+      transition: opacity .15s, transform .2s;
+      border-radius: 4px;
+    }
+    #btn-settings:hover  { opacity: 0.75; transform: rotate(30deg); }
+    #btn-settings:focus  { outline: none; }
+    #btn-settings img    { width: 13px; height: 13px; object-fit: contain; display: block; }
+
+    /* Logo — left */
+    .title-left {
+      display: flex;
+      align-items: center;
+      -webkit-app-region: no-drag;
+    }
+
+    #logo {
+      width: 17px;
+      height: 17px;
+      object-fit: contain;
+      opacity: .7;
+    }
+
+    /* Traffic lights pushed to the right */
+    .tl { margin-left: auto; }
+
+    /* ── TERMINAL ───────────────────────────────────────────────────────────── */
+
+    #term-container {
+      flex: 1;
+      overflow: hidden;
+      padding: 6px 8px;
+      -webkit-app-region: no-drag;
+    }
+
+    .xterm {
+      height: 100%;
+      background: var(--term-bg) !important;
+    }
+
+    .xterm-viewport {
+      background-color: var(--term-bg) !important;
+    }
+
+    .xterm-screen {
+      background: var(--term-bg) !important;
+    }
+
+    .xterm-rows {
+      background: var(--term-bg) !important;
+    }
+
+    /* Block cursor glow */
+    .xterm-cursor-layer .xterm-cursor {
+      box-shadow: 0 0 6px 1px rgba(255,255,255,.55) !important;
+    }
+
+    .xterm-viewport::-webkit-scrollbar       { width: 5px; }
+    .xterm-viewport::-webkit-scrollbar-track { background: #000; }
+    .xterm-viewport::-webkit-scrollbar-thumb {
+      background: rgba(255,255,255,.15);
+      border-radius: 3px;
+    }
+    .xterm-viewport::-webkit-scrollbar-thumb:hover {
+      background: rgba(255,255,255,.28);
+    }
+
+    /* ── SETTINGS PANEL ─────────────────────────────────────────────────────── */
+
+    #settings-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 8888;
+      background: rgba(0,0,0,0);
+      pointer-events: none;
+      transition: background .2s;
+    }
+    #settings-overlay.open {
+      background: rgba(0,0,0,.45);
+      pointer-events: all;
+    }
+
+    #settings-panel {
+      font-family: var(--font);
+      position: absolute;
+      top: 46px;
+      left: 50%;
+      transform: translateX(-50%) translateY(-6px);
+      width: 400px;
+      max-height: calc(100vh - 70px);
+      background: #111;
+      border: 1px solid #222;
+      border-radius: 10px;
+      box-shadow: 0 16px 48px rgba(0,0,0,.7), 0 0 0 .5px rgba(255,255,255,.05);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity .18s ease, transform .18s ease;
+    }
+    #settings-overlay.open #settings-panel {
+      opacity: 1;
+      pointer-events: all;
+      transform: translateX(-50%) translateY(0);
+    }
+
+    .sp-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 16px 10px;
+      border-bottom: 1px solid #1e1e1e;
+      flex-shrink: 0;
+    }
+    .sp-header-title {
+      font-family: var(--font);
+      font-size: 11px;
+      letter-spacing: .14em;
+      text-transform: uppercase;
+      color: rgba(255,255,255,.4);
+    }
+    .sp-close {
+      background: none;
+      border: none;
+      color: rgba(255,255,255,.3);
+      font-size: 16px;
+      cursor: pointer;
+      line-height: 1;
+      padding: 0 2px;
+      transition: color .12s;
+    }
+    .sp-close:hover  { color: rgba(255,255,255,.7); }
+    .sp-close:focus  { outline: none; }
+
+    /* Scrollable body */
+    .sp-body {
+      overflow-y: auto;
+      flex: 1;
+    }
+    .sp-body::-webkit-scrollbar       { width: 4px; }
+    .sp-body::-webkit-scrollbar-track { background: transparent; }
+    .sp-body::-webkit-scrollbar-thumb { background: #2a2a2a; border-radius: 2px; }
+
+    .sp-section {
+      padding: 12px 16px;
+      border-bottom: 1px solid #181818;
+    }
+    .sp-section:last-child { border-bottom: none; }
+
+    .sp-section-label {
+      font-size: 9.5px;
+      letter-spacing: .16em;
+      text-transform: uppercase;
+      color: rgba(255,255,255,.22);
+      margin-bottom: 10px;
+    }
+
+    /* Generic row */
+    .sp-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 5px 0;
+      gap: 12px;
+    }
+    .sp-row-label {
+      font-size: 11.5px;
+      color: rgba(255,255,255,.55);
+      font-family: var(--font);
+      letter-spacing: .02em;
+      flex-shrink: 0;
+    }
+
+    /* Toggle switch */
+    .sp-toggle {
+      position: relative;
+      width: 32px;
+      height: 18px;
+      flex-shrink: 0;
+    }
+    .sp-toggle input { opacity: 0; width: 0; height: 0; position: absolute; }
+    .sp-toggle-track {
+      position: absolute;
+      inset: 0;
+      border-radius: 9px;
+      background: #2a2a2a;
+      transition: background .18s;
+      cursor: pointer;
+    }
+    .sp-toggle input:checked + .sp-toggle-track { background: #3a7d44; }
+    .sp-toggle-track::after {
+      content: '';
+      position: absolute;
+      top: 3px; left: 3px;
+      width: 12px; height: 12px;
+      border-radius: 50%;
+      background: rgba(255,255,255,.55);
+      transition: transform .18s, background .18s;
+    }
+    .sp-toggle input:checked + .sp-toggle-track::after {
+      transform: translateX(14px);
+      background: #fff;
+    }
+
+    /* Checkbox */
+    .sp-cb-label {
+      font-size: 11.5px;
+      color: rgba(255,255,255,.55);
+      font-family: var(--font);
+      letter-spacing: .02em;
+      cursor: pointer;
+      flex: 1;
+    }
+    .sp-checkbox {
+      width: 13px;
+      height: 13px;
+      accent-color: #3a7d44;
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+
+    /* Number / text input */
+    .sp-input {
+      background: #0d0d0d;
+      border: 1px solid #252525;
+      border-radius: 5px;
+      color: rgba(255,255,255,.7);
+      font-family: "Fira", monospace;
+      font-size: 11px;
+      padding: 3px 7px;
+      text-align: right;
+      outline: none;
+      transition: border-color .13s;
+      min-width: 0;
+    }
+    .sp-input:focus { border-color: #383838; }
+    .sp-input[type=number] { width: 66px; }
+    .sp-input[type=text]   { width: 170px; }
+
+    /* Select */
+    .sp-select {
+      background: #0d0d0d;
+      border: 1px solid #252525;
+      border-radius: 5px;
+      color: rgba(255,255,255,.7);
+      font-family: var(--font);
+      font-size: 11px;
+      padding: 3px 7px;
+      outline: none;
+      cursor: pointer;
+      transition: border-color .13s;
+      width: 110px;
+    }
+    .sp-select:focus { border-color: #383838; }
+    .sp-select option { background: #111; }
+
+    /* Color swatch + input */
+    .sp-color-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 4px 0;
+      gap: 8px;
+    }
+    .sp-color-label {
+      font-size: 11px;
+      color: rgba(255,255,255,.45);
+      font-family: var(--font);
+      flex: 1;
+      min-width: 0;
+    }
+    .sp-color-wrap {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex-shrink: 0;
+    }
+    .sp-color-swatch {
+      width: 16px; height: 16px;
+      border-radius: 4px;
+      border: 1px solid rgba(255,255,255,.12);
+      cursor: pointer;
+      flex-shrink: 0;
+      padding: 0;
+      overflow: hidden;
+    }
+    .sp-color-swatch input[type=color] {
+      opacity: 0;
+      width: 200%;
+      height: 200%;
+      cursor: pointer;
+      position: relative;
+      top: -50%;
+      left: -50%;
+    }
+    .sp-color-hex {
+      width: 78px;
+      background: #0d0d0d;
+      border: 1px solid #252525;
+      border-radius: 5px;
+      color: rgba(255,255,255,.6);
+      font-family: "Fira", monospace;
+      font-size: 10.5px;
+      padding: 2px 6px;
+      outline: none;
+      transition: border-color .13s;
+    }
+    .sp-color-hex:focus { border-color: #383838; }
+
+    /* Colors grid — 2 columns */
+    .sp-colors-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0 16px;
+    }
+
+    /* Footer */
+    .sp-actions {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 16px 13px;
+      gap: 8px;
+      border-top: 1px solid #1a1a1a;
+      flex-shrink: 0;
+    }
+    .sp-msg {
+      font-size: 10px;
+      color: var(--green);
+      opacity: 0;
+      transition: opacity .2s;
+      font-family: var(--font-bold);
+    }
+    .sp-msg.visible { opacity: 1; }
+    .sp-msg.error   { color: var(--red); }
+
+    .sp-save {
+      margin-left: auto;
+      background: #1a1a1a;
+      border: 1px solid #2a2a2a;
+      border-radius: 6px;
+      color: rgba(255,255,255,.6);
+      font-family: var(--font);
+      font-size: 10.5px;
+      letter-spacing: .08em;
+      padding: 5px 14px;
+      cursor: pointer;
+      transition: background .13s, color .13s, border-color .13s;
+    }
+    .sp-save:hover  { background: #222; color: #fff; border-color: #333; }
+    .sp-save:focus  { outline: none; }
+  </style>
+</head>
+
+<body>
+
+<!-- ── INTRO ─────────────────────────────────────────────────────────────────── -->
+<div id="intro">
+  <img id="intro-logo" src="./resources/Tlogo.png" alt="logo" />
+  <div id="intro-title">Phi</div>
+  <div id="intro-sub">CREATED by northern meed</div>
+</div>
+
+<!-- ── APP ───────────────────────────────────────────────────────────────────── -->
+<div id="app">
+
+  <!-- TITLE BAR -->
+  <div id="titlebar">
+
+    <!-- LEFT: logo -->
+    <div class="title-left">
+      <img src="./resources/CSL.png" id="logo" />
+    </div>
+
+    <!-- CENTER: session label + settings button -->
+    <div id="title-center">
+      <span id="title-center-text">Phi</span>
+      <button id="btn-settings" title="Settings">
+        <img src="./resources/setting.png" alt="settings" />
+      </button>
+    </div>
+
+    <!-- RIGHT: traffic lights -->
+    <div class="tl">
+      <button class="tl-btn tl-z" id="btn-zoom"></button>
+      <button class="tl-btn tl-m" id="btn-min"></button>
+      <button class="tl-btn tl-c" id="btn-close"></button>
+    </div>
+
+  </div>
+
+  <!-- TERMINAL -->
+  <div id="term-container"></div>
+
+</div>
+
+<!-- ── SETTINGS OVERLAY ──────────────────────────────────────────────────────── -->
+<div id="settings-overlay">
+  <div id="settings-panel">
+
+    <div class="sp-header">
+      <span class="sp-header-title">Settings</span>
+      <button class="sp-close" id="sp-close-btn">×</button>
+    </div>
+
+    <div class="sp-body">
+
+      <!-- ── Startup ── -->
+      <div class="sp-section">
+        <div class="sp-section-label">Startup</div>
+        <div class="sp-row">
+          <label class="sp-cb-label" for="toggle-intro">Show intro splash</label>
+          <input type="checkbox" class="sp-checkbox" id="toggle-intro" />
+        </div>
+        <div class="sp-row">
+          <label class="sp-cb-label" for="toggle-startup">Enable startup settings</label>
+          <input type="checkbox" class="sp-checkbox" id="toggle-startup" />
+        </div>
+      </div>
+
+      <!-- ── Font ── -->
+      <div class="sp-section">
+        <div class="sp-section-label">Font</div>
+        <div class="sp-row">
+          <span class="sp-row-label">Font family</span>
+          <input type="text" class="sp-input" id="s-fontFamily" />
+        </div>
+        <div class="sp-row">
+          <span class="sp-row-label">Font size</span>
+          <input type="number" class="sp-input" id="s-fontSize" min="6" max="72" step="1" />
+        </div>
+        <div class="sp-row">
+          <span class="sp-row-label">Line height</span>
+          <input type="number" class="sp-input" id="s-lineHeight" min="0.8" max="3" step="0.05" />
+        </div>
+      </div>
+
+      <!-- ── Cursor ── -->
+      <div class="sp-section">
+        <div class="sp-section-label">Cursor</div>
+        <div class="sp-row">
+          <span class="sp-row-label">Style</span>
+          <select class="sp-select" id="s-cursorStyle">
+            <option value="block">Block</option>
+            <option value="underline">Underline</option>
+            <option value="bar">Bar</option>
+          </select>
+        </div>
+        <div class="sp-row">
+          <label class="sp-cb-label" for="s-cursorBlink">Blink</label>
+          <input type="checkbox" class="sp-checkbox" id="s-cursorBlink" />
+        </div>
+        <div class="sp-row">
+          <label class="sp-cb-label" for="s-cursorSmoothCaretAnimation">Smooth caret animation</label>
+          <input type="checkbox" class="sp-checkbox" id="s-cursorSmoothCaretAnimation" />
+        </div>
+      </div>
+
+      <!-- ── Terminal ── -->
+      <div class="sp-section">
+        <div class="sp-section-label">Terminal</div>
+        <div class="sp-row">
+          <span class="sp-row-label">Scrollback lines</span>
+          <input type="number" class="sp-input" id="s-scrollback" min="0" max="100000" step="100" />
+        </div>
+      </div>
+
+      <!-- ── Theme: base colors ── -->
+      <div class="sp-section">
+        <div class="sp-section-label">Theme — Base</div>
+        <div class="sp-color-row">
+          <span class="sp-color-label">Background</span>
+          <div class="sp-color-wrap">
+            <div class="sp-color-swatch" id="sw-background"><input type="color" id="cp-background" /></div>
+            <input type="text" class="sp-color-hex" id="s-background" maxlength="25" />
+          </div>
+        </div>
+        <div class="sp-color-row">
+          <span class="sp-color-label">Foreground</span>
+          <div class="sp-color-wrap">
+            <div class="sp-color-swatch" id="sw-foreground"><input type="color" id="cp-foreground" /></div>
+            <input type="text" class="sp-color-hex" id="s-foreground" maxlength="25" />
+          </div>
+        </div>
+        <div class="sp-color-row">
+          <span class="sp-color-label">Cursor</span>
+          <div class="sp-color-wrap">
+            <div class="sp-color-swatch" id="sw-cursor"><input type="color" id="cp-cursor" /></div>
+            <input type="text" class="sp-color-hex" id="s-cursor" maxlength="25" />
+          </div>
+        </div>
+        <div class="sp-color-row">
+          <span class="sp-color-label">Cursor accent</span>
+          <div class="sp-color-wrap">
+            <div class="sp-color-swatch" id="sw-cursorAccent"><input type="color" id="cp-cursorAccent" /></div>
+            <input type="text" class="sp-color-hex" id="s-cursorAccent" maxlength="25" />
+          </div>
+        </div>
+        <div class="sp-color-row">
+          <span class="sp-color-label">Selection</span>
+          <div class="sp-color-wrap">
+            <div class="sp-color-swatch" id="sw-selectionBackground" style="background:rgba(255,255,255,0.18)"></div>
+            <input type="text" class="sp-color-hex" id="s-selectionBackground" maxlength="40" />
+          </div>
+        </div>
+      </div>
+
+      <!-- ── Theme: ANSI colors ── -->
+      <div class="sp-section">
+        <div class="sp-section-label">Theme — ANSI Colors</div>
+        <div class="sp-colors-grid">
+          <!-- normal -->
+          <div class="sp-color-row">
+            <span class="sp-color-label">Black</span>
+            <div class="sp-color-wrap">
+              <div class="sp-color-swatch" id="sw-black"><input type="color" id="cp-black" /></div>
+              <input type="text" class="sp-color-hex" id="s-black" maxlength="25" />
+            </div>
+          </div>
+          <div class="sp-color-row">
+            <span class="sp-color-label">Bright Black</span>
+            <div class="sp-color-wrap">
+              <div class="sp-color-swatch" id="sw-brightBlack"><input type="color" id="cp-brightBlack" /></div>
+              <input type="text" class="sp-color-hex" id="s-brightBlack" maxlength="25" />
+            </div>
+          </div>
+          <div class="sp-color-row">
+            <span class="sp-color-label">Red</span>
+            <div class="sp-color-wrap">
+              <div class="sp-color-swatch" id="sw-red"><input type="color" id="cp-red" /></div>
+              <input type="text" class="sp-color-hex" id="s-red" maxlength="25" />
+            </div>
+          </div>
+          <div class="sp-color-row">
+            <span class="sp-color-label">Bright Red</span>
+            <div class="sp-color-wrap">
+              <div class="sp-color-swatch" id="sw-brightRed"><input type="color" id="cp-brightRed" /></div>
+              <input type="text" class="sp-color-hex" id="s-brightRed" maxlength="25" />
+            </div>
+          </div>
+          <div class="sp-color-row">
+            <span class="sp-color-label">Green</span>
+            <div class="sp-color-wrap">
+              <div class="sp-color-swatch" id="sw-green"><input type="color" id="cp-green" /></div>
+              <input type="text" class="sp-color-hex" id="s-green" maxlength="25" />
+            </div>
+          </div>
+          <div class="sp-color-row">
+            <span class="sp-color-label">Bright Green</span>
+            <div class="sp-color-wrap">
+              <div class="sp-color-swatch" id="sw-brightGreen"><input type="color" id="cp-brightGreen" /></div>
+              <input type="text" class="sp-color-hex" id="s-brightGreen" maxlength="25" />
+            </div>
+          </div>
+          <div class="sp-color-row">
+            <span class="sp-color-label">Yellow</span>
+            <div class="sp-color-wrap">
+              <div class="sp-color-swatch" id="sw-yellow"><input type="color" id="cp-yellow" /></div>
+              <input type="text" class="sp-color-hex" id="s-yellow" maxlength="25" />
+            </div>
+          </div>
+          <div class="sp-color-row">
+            <span class="sp-color-label">Bright Yellow</span>
+            <div class="sp-color-wrap">
+              <div class="sp-color-swatch" id="sw-brightYellow"><input type="color" id="cp-brightYellow" /></div>
+              <input type="text" class="sp-color-hex" id="s-brightYellow" maxlength="25" />
+            </div>
+          </div>
+          <div class="sp-color-row">
+            <span class="sp-color-label">Blue</span>
+            <div class="sp-color-wrap">
+              <div class="sp-color-swatch" id="sw-blue"><input type="color" id="cp-blue" /></div>
+              <input type="text" class="sp-color-hex" id="s-blue" maxlength="25" />
+            </div>
+          </div>
+          <div class="sp-color-row">
+            <span class="sp-color-label">Bright Blue</span>
+            <div class="sp-color-wrap">
+              <div class="sp-color-swatch" id="sw-brightBlue"><input type="color" id="cp-brightBlue" /></div>
+              <input type="text" class="sp-color-hex" id="s-brightBlue" maxlength="25" />
+            </div>
+          </div>
+          <div class="sp-color-row">
+            <span class="sp-color-label">Magenta</span>
+            <div class="sp-color-wrap">
+              <div class="sp-color-swatch" id="sw-magenta"><input type="color" id="cp-magenta" /></div>
+              <input type="text" class="sp-color-hex" id="s-magenta" maxlength="25" />
+            </div>
+          </div>
+          <div class="sp-color-row">
+            <span class="sp-color-label">Bright Magenta</span>
+            <div class="sp-color-wrap">
+              <div class="sp-color-swatch" id="sw-brightMagenta"><input type="color" id="cp-brightMagenta" /></div>
+              <input type="text" class="sp-color-hex" id="s-brightMagenta" maxlength="25" />
+            </div>
+          </div>
+          <div class="sp-color-row">
+            <span class="sp-color-label">Cyan</span>
+            <div class="sp-color-wrap">
+              <div class="sp-color-swatch" id="sw-cyan"><input type="color" id="cp-cyan" /></div>
+              <input type="text" class="sp-color-hex" id="s-cyan" maxlength="25" />
+            </div>
+          </div>
+          <div class="sp-color-row">
+            <span class="sp-color-label">Bright Cyan</span>
+            <div class="sp-color-wrap">
+              <div class="sp-color-swatch" id="sw-brightCyan"><input type="color" id="cp-brightCyan" /></div>
+              <input type="text" class="sp-color-hex" id="s-brightCyan" maxlength="25" />
+            </div>
+          </div>
+          <div class="sp-color-row">
+            <span class="sp-color-label">White</span>
+            <div class="sp-color-wrap">
+              <div class="sp-color-swatch" id="sw-white"><input type="color" id="cp-white" /></div>
+              <input type="text" class="sp-color-hex" id="s-white" maxlength="25" />
+            </div>
+          </div>
+          <div class="sp-color-row">
+            <span class="sp-color-label">Bright White</span>
+            <div class="sp-color-wrap">
+              <div class="sp-color-swatch" id="sw-brightWhite"><input type="color" id="cp-brightWhite" /></div>
+              <input type="text" class="sp-color-hex" id="s-brightWhite" maxlength="25" />
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /.sp-body -->
+
+    <div class="sp-actions">
+      <span class="sp-msg" id="sp-msg"></span>
+      <button class="sp-save" id="sp-save-btn">Save</button>
+    </div>
+
+  </div>
+</div>
+
+<script type="module">
+  // ── LOAD SETTINGS FIRST ─────────────────────────────────────────────────────
+  const settings = await window.electronAPI.getSettings();
+
+  // ── INTRO ───────────────────────────────────────────────────────────────────
+  const intro = document.getElementById('intro');
+
+  if (settings.showIntro === false) {
+    // Skip intro entirely
+    intro.remove();
+  } else {
+    setTimeout(() => {
+      intro.classList.add('fade-out');
+      intro.addEventListener('animationend', () => intro.remove(), { once: true });
+    }, 1800);
+  }
+
+  // Load Bg Color -- ** //
+  document.documentElement.style.setProperty(
+    "--term-bg",
+    settings.theme.background
+  );
+
+  // ── XTERM ───────────────────────────────────────────────────────────────────
+  // Strip non-xterm keys before passing to Terminal (showIntro / startupEnabled
+  // are app-only flags and must not be passed to xterm)
+  function buildXtermOptions(s) {
+    const { showIntro, startupEnabled, ...xtermOpts } = s;
+    return xtermOpts;
+  }
+
+  const xtermOptions = settings.startupEnabled !== false ? buildXtermOptions(settings) : {};
+  const term = new Terminal(xtermOptions);
+
+  const fitAddon      = new FitAddon.FitAddon();
+  const webLinksAddon = new WebLinksAddon.WebLinksAddon();
+
+  term.loadAddon(fitAddon);
+  term.loadAddon(webLinksAddon);
+  term.open(document.getElementById('term-container'));
+  fitAddon.fit();
+  term.focus();
+
+  // ── RESIZE ──────────────────────────────────────────────────────────────────
+  function notifyResize() {
+    fitAddon.fit();
+    window.electronAPI?.resize(term.cols, term.rows);
+  }
+
+  new ResizeObserver(() => notifyResize())
+    .observe(document.getElementById('term-container'));
+
+  window.addEventListener('resize', notifyResize);
+
+
+  // --- Updating ---------------------------------------------------------------
+  window.electronAPI.onSettingsChange((settings) => {
+
+    // background theme
+    document.documentElement.style.setProperty(
+      "--term-bg",
+      settings.theme.background
+    );
+
+    // font update
+    term.options.fontFamily = settings.fontFamily;
+    term.options.fontSize = settings.fontSize;
+    term.options.cursorBlink = settings.cursorBlink;
+
+    // theme update
+    term.options.theme = settings.theme;
+
+    // refresh layout
+    term.refresh(0, term.rows - 1);
+  });
+
+  // ── I/O ─────────────────────────────────────────────────────────────────────
+  term.onData(data => window.electronAPI?.sendInput(data));
+
+  const api = window.electronAPI;
+  if (api) {
+    api.onOutput?.(data => {
+      term.write(data);
+      const osc7 = data.match(/\x1b\]7;file:\/\/[^/]*([^\x07\x1b]+)[\x07\x1b]/);
+      if (osc7) {
+        const p = decodeURIComponent(osc7[1]);
+        // (status bar removed — no bcwd element)
+      }
+    });
+  }
+
+  // ── WINDOW BUTTONS ──────────────────────────────────────────────────────────
+  document.getElementById('btn-close')
+    .addEventListener('click', e => { e.stopPropagation(); api?.windowClose();    });
+  document.getElementById('btn-min')
+    .addEventListener('click', e => { e.stopPropagation(); api?.windowMinimize(); });
+  document.getElementById('btn-zoom')
+    .addEventListener('click', e => { e.stopPropagation(); api?.windowMaximize(); });
+
+  // ── SETTINGS PANEL ──────────────────────────────────────────────────────────
+  const overlay       = document.getElementById('settings-overlay');
+  const btnSettings   = document.getElementById('btn-settings');
+  const spCloseBtn    = document.getElementById('sp-close-btn');
+  const saveBtn       = document.getElementById('sp-save-btn');
+  const spMsg         = document.getElementById('sp-msg');
+
+  // ── Color key → swatch bg sync ──────────────────────────────────────────────
+  const COLOR_KEYS = [
+    'background','foreground','cursor','cursorAccent',
+    'black','red','green','yellow','blue','magenta','cyan','white',
+    'brightBlack','brightRed','brightGreen','brightYellow',
+    'brightBlue','brightMagenta','brightCyan','brightWhite'
+  ];
+
+  function setSwatchBg(key, val) {
+    const sw = document.getElementById('sw-' + key);
+    if (sw) sw.style.background = val;
+  }
+
+  // Wire each color picker ↔ hex input ↔ swatch
+  COLOR_KEYS.forEach(key => {
+    const hex = document.getElementById('s-' + key);
+    const cp  = document.getElementById('cp-' + key);
+    if (!hex) return;
+    hex.addEventListener('input', () => {
+      setSwatchBg(key, hex.value);
+      if (cp) {
+        // only sync picker for plain #rrggbb values
+        if (/^#[0-9a-fA-F]{6}$/.test(hex.value)) cp.value = hex.value;
+      }
+    });
+    if (cp) {
+      cp.addEventListener('input', () => {
+        hex.value = cp.value;
+        setSwatchBg(key, cp.value);
+      });
+    }
+  });
+
+
+  // ── Populate panel from settings object ─────────────────────────────────────
+  function populatePanel(s) {
+    // Startup toggles
+    document.getElementById('toggle-intro').checked   = s.showIntro        !== false;
+    document.getElementById('toggle-startup').checked = s.startupEnabled   !== false;
+
+    // Font
+    document.getElementById('s-fontFamily').value  = s.fontFamily  ?? "'Fira', monospace";
+    document.getElementById('s-fontSize').value    = s.fontSize    ?? 13;
+    document.getElementById('s-lineHeight').value  = s.lineHeight  ?? 1;
+
+    // Cursor
+    document.getElementById('s-cursorStyle').value               = s.cursorStyle               ?? 'block';
+    document.getElementById('s-cursorBlink').checked             = s.cursorBlink               !== false;
+    document.getElementById('s-cursorSmoothCaretAnimation').checked = s.cursorSmoothCaretAnimation !== false;
+
+    // Terminal
+    document.getElementById('s-scrollback').value = s.scrollback ?? 5000;
+
+    // Theme colors
+    const t = s.theme ?? {};
+    COLOR_KEYS.forEach(key => {
+      const val = t[key] ?? '';
+      const hex = document.getElementById('s-' + key);
+      const cp  = document.getElementById('cp-' + key);
+      if (hex) hex.value = val;
+      setSwatchBg(key, val);
+      if (cp && /^#[0-9a-fA-F]{6}$/.test(val)) cp.value = val;
+    });
+  }
+
+  // ── Collect panel back into settings object ──────────────────────────────────
+  function collectPanel(existing) {
+    const s = { ...existing };
+
+    s.showIntro        = document.getElementById('toggle-intro').checked;
+    s.startupEnabled   = document.getElementById('toggle-startup').checked;
+    s.fontFamily       = document.getElementById('s-fontFamily').value;
+    s.fontSize         = parseFloat(document.getElementById('s-fontSize').value);
+    s.lineHeight       = parseFloat(document.getElementById('s-lineHeight').value);
+    s.cursorStyle      = document.getElementById('s-cursorStyle').value;
+    s.cursorBlink      = document.getElementById('s-cursorBlink').checked;
+    s.cursorSmoothCaretAnimation = document.getElementById('s-cursorSmoothCaretAnimation').checked;
+    s.scrollback       = parseInt(document.getElementById('s-scrollback').value, 10);
+
+    s.theme = { ...(s.theme ?? {}) };
+    COLOR_KEYS.forEach(key => {
+      const val = document.getElementById('s-' + key)?.value ?? '';
+      if (val) s.theme[key] = val;
+    });
+
+    return s;
+  }
+
+  let _cachedSettings = {};
+
+  async function openPanel() {
+    _cachedSettings = await api?.getSettings?.() ?? {};
+    populatePanel(_cachedSettings);
+    overlay.classList.add('open');
+  }
+  function closePanel() {
+    overlay.classList.remove('open');
+    term.focus();
+  }
+
+  btnSettings.addEventListener('click', e => {
+    e.stopPropagation();
+    overlay.classList.contains('open') ? closePanel() : openPanel();
+  });
+  spCloseBtn.addEventListener('click', closePanel);
+  overlay.addEventListener('click', e => { if (e.target === overlay) closePanel(); });
+
+  function showMsg(text, isError = false) {
+    spMsg.textContent = text;
+    spMsg.classList.toggle('error', isError);
+    spMsg.classList.add('visible');
+    setTimeout(() => spMsg.classList.remove('visible'), 2400);
+  }
+
+  saveBtn.addEventListener('click', async () => {
+    const updated = collectPanel(_cachedSettings);
+    _cachedSettings = updated;
+    try {
+      await api?.saveSettings?.(updated);
+      showMsg('Applyed');
+    } catch {
+      showMsg('Applyed');
+    }
+  });
+</script>
+
+</body>
+</html>

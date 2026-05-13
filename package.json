@@ -1,0 +1,63 @@
+{
+  "name": "phi",
+  "version": "1.0.0",
+  "description": "Phi Terminal",
+  "main": "dist/main.js",
+  "build": {
+    "appId": "com.meed.phi",
+    "asar": true,
+    "compression": "maximum",
+    "files": [
+      "dist/**/*",
+      "index.html",
+      "resources/**/*",
+      "node_modules/node-pty/**/*",
+      "node_modules/axios/**/*",
+      "node_modules/follow-redirects/**/*",
+      "node_modules/form-data/**/*",
+      "node_modules/proxy-from-env/**/*",
+      "node_modules/combined-stream/**/*",
+      "node_modules/delayed-stream/**/*",
+      "node_modules/asynckit/**/*",
+      "node_modules/mime-types/**/*",
+      "node_modules/mime-db/**/*",
+      "!node_modules/**/*.map",
+      "!node_modules/**/test/**",
+      "!node_modules/**/tests/**",
+      "!node_modules/**/*.md",
+      "!node_modules/**/README*",
+      "!node_modules/**/LICENSE*",
+      "!node_modules/**/.github/**"
+    ],
+    "win": {
+      "target": "nsis",
+      "icon": "resources/icon.ico"
+    },
+    "nodeGypRebuild": false,
+    "buildDependenciesFromSource": false,
+    "npmRebuild": false
+  },
+  "dependencies": {
+    "axios": "^1.16.0",
+    "node-pty": "^1.1.0"
+  },
+  "scripts": {
+    "build": "tsc",
+    "start": "npm run build && electron .",
+    "dist": "npm run build && cross-env SpectreMitigation=false electron-builder"
+  },
+  "keywords": [],
+  "author": "Meed .M",
+  "license": "ISC",
+  "devDependencies": {
+    "@types/node": "^25.6.2",
+    "concurrently": "^9.2.1",
+    "cross-env": "^10.1.0",
+    "electron": "^42.0.1",
+    "electron-builder": "^26.8.1",
+    "node-gyp": "^12.3.0",
+    "nodemon": "^3.1.14",
+    "ts-node": "^10.9.2",
+    "typescript": "^6.0.3"
+  }
+}
