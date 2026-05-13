@@ -5,12 +5,13 @@
     "lib": ["ES2020"],
     "outDir": "./dist",
     "rootDir": "./src",
-    "strict": true,
+    "strict": false,
     "esModuleInterop": true,
     "skipLibCheck": true,
     "resolveJsonModule": true,
     "sourceMap": true
   },
-  "include": ["src/**/*", "settings.json"],
+  "include": ["src/**/*", "settings.json","src/**/*.ts",
+    "scripts/**/*.ts", "scripts/copy-paste.تس"],
   "exclude": ["node_modules", "dist"]
 }

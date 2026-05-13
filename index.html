@@ -928,7 +928,6 @@
 
   const xtermOptions = settings.startupEnabled !== false ? buildXtermOptions(settings) : {};
   const term = new Terminal(xtermOptions);
-
   window.term = term;
 
   const fitAddon      = new FitAddon.FitAddon();
