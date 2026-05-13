@@ -929,6 +929,8 @@
   const xtermOptions = settings.startupEnabled !== false ? buildXtermOptions(settings) : {};
   const term = new Terminal(xtermOptions);
 
+  window.term = term;
+
   const fitAddon      = new FitAddon.FitAddon();
   const webLinksAddon = new WebLinksAddon.WebLinksAddon();
 
@@ -1126,6 +1128,9 @@
     }
   });
 </script>
+
+
+<script src="./scripts/copy-paste.js"></script>
 
 </body>
 </html>
